@@ -1,0 +1,22 @@
+{
+  "name": "symbol-hq-node-list",
+  "version": "1.0.0",
+  "description": "Symbol High Quality Node List",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YasunoriMATSUOKA/symbol-hq-node-list.git"
+  },
+  "author": "YasunoriMATSUOKA",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YasunoriMATSUOKA/symbol-hq-node-list/issues"
+  },
+  "homepage": "https://github.com/YasunoriMATSUOKA/symbol-hq-node-list#readme",
+  "dependencies": {
+    "axios": "^0.19.2"
+  }
+}
