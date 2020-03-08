@@ -6,7 +6,6 @@ const baseNodeUrlList = [
     "https://symbol-testnet-api-1.next-web-technology.com:3001",
     "https://symbol-testnet-api-2.next-web-technology.com:3001"
 ]
-
 const defaultMinPageSize = 10
 const defaultMaxPageSize = 100
 
@@ -51,7 +50,7 @@ const isValidPageSize = (number) => {
 }
 
 // Block routes start
-const fetchBLockHeight = async (nodeUrl, height) => {
+const fetchBLockWithHeight = async (nodeUrl, height) => {
     if (isPlusInteger(height)) {
         const method = "/block/" + height
         const urlObject = new URL(method, nodeUrl)
@@ -68,6 +67,78 @@ const fetchBLockHeight = async (nodeUrl, height) => {
         })
     } else {
         console.error("Error! height must be plus integer.")
+    }
+}
+
+const fetchBLocksWithHeightAndLimit = async (nodeUrl, height, pageSize) => {
+    if (isPlusInteger(height) && isPlusInteger(pageSize) && isValidPageSize(pageSize)) {
+        const method = "/blocks/" + height + "/limit/" + pageSize
+        const urlObject = new URL(method, nodeUrl)
+        const url = urlObject.toString()
+        console.log("url", url)
+        return await axios(url).then((response) => {
+            const status = response.status
+            console.log("status", status)
+            const data = response.data
+            console.log("body", data)
+            return data
+        }).catch((error) => {
+            console.error(error)
+        })
+    } else {
+        if (!isPlusInteger(height)) {
+            console.error("Error! height must be plus integer.")
+        }
+        if (!isPlusInteger(pageSize)) {
+            console.error("Error! pageSize must be plus integer.")
+        }
+        if (!isValidPageSize(pageSize)) {
+            console.error("Error! pageSize must be biger than min page size(=10 in default) and smaller than max page size(=100 in default).")
+        }
+    }
+}
+
+const fetchBLockTransactionsWithHeight = async (nodeUrl, height, pageSize, id, ordering) => {
+    if (isPlusInteger(height)) {
+        const method = "/block/" + height + "/transactions"
+        const urlObject = new URL(method, nodeUrl)
+        if (isPlusInteger(pageSize) && isValidPageSize(pageSize)) {
+            urlObject.searchParams.set("pageSize", pageSize)
+        }
+        if (id) {
+            urlObject.searchParams.set("id", id)
+        }
+        if (ordering === "-id" || ordering === "id") {
+            urlObject.searchParams.set("ordering", ordering)
+        }
+        const url = urlObject.toString()
+        console.log("url", url)
+        return await axios(url).then((response) => {
+            const status = response.status
+            console.log("status", status)
+            const data = response.data
+            console.log("body", data)
+            return data
+        }).catch((error) => {
+            console.error(error)
+        })
+    } else {
+        if (!isPlusInteger(height)) {
+            console.error("Error! height must be plus integer.")
+        }
+        if (pageSize) {
+            if (!isPlusInteger(pageSize)) {
+                console.error("Error! pageSize must be plus integer.")
+            }
+            if (!isValidPageSize(height)) {
+                console.error("Error! pageSize must be biger than min page size(=10 in default) and smaller than max page size(=100 in default).")
+            }
+        }
+        if (ordering) {
+            if (ordering !== "-id" || ordering !== "id") {
+                console.error("Error! ordering must be -id or id.")
+            }
+        }
     }
 }
 // Block routes end
@@ -250,61 +321,34 @@ const fetchNodeServer = async (nodeUrl) => {
     const nodeUrl = baseNodeUrlList[0]
     
     // Block routes start
-    const block1 = await fetchBLockHeight(nodeUrl, 1)
-    console.log("block1")
-    console.log(block1)
+    const block1 = await fetchBLockWithHeight(nodeUrl, 1)
+    const blocks20To11 = await fetchBLocksWithHeightAndLimit(nodeUrl, 20, 10)
+    const block1TransactionsDefault = await fetchBLockTransactionsWithHeight(nodeUrl, 1)
+    const block1TransactionsPageSize11 = await fetchBLockTransactionsWithHeight(nodeUrl, 1, 11)
+    // Todo: id and ordering implementation is not worked well. This must be modified.
+    const block1TransactionsPageSize11OrderingId = await fetchBLockTransactionsWithHeight(nodeUrl, 1, 11, undefined, "id")
     // Block routes end
     
     // Chain routes start
     const chainHeight = await fetchChainHeight(nodeUrl)
-    console.log("chainHeight")
-    console.log(chainHeight)
-
     const chainScore = await fetchChainScore(nodeUrl)
-    console.log("chainScore")
-    console.log(chainScore)
     // Chain routes end
 
     // Network routes start
     const network = await fetchNetwork(nodeUrl)
-    console.log("network")
-    console.log(network)
-
     const networkFees = await fetchNetworkFees(nodeUrl)
-    console.log("networkFees")
-    console.log(networkFees)
-
     // Note: Probably this method can only be used in optional configured node.
     /*
     const networkProperties = await fetchNetworkProperties(nodeUrl)
-    console.log("networkProperties")
-    console.log(networkProperties)
     */
     // Network routes end
 
     // Node routes start
     const nodeInfo = await fetchNodeInfo(nodeUrl)
-    console.log("nodeInfo")
-    console.log(nodeInfo)
-    
     const peerNodes = await fetchNodePeers(nodeUrl)
-    console.log("peerNodes")
-    console.log(peerNodes)
-    
     const nodeHealth = await fetchNodeHealth(nodeUrl)
-    console.log("nodeHealth")
-    console.log(nodeHealth)
-    
     const nodeStorage = await fetchNodeStorage(nodeUrl)
-    console.log("nodeStorage")
-    console.log(nodeStorage)
-
     const nodeTime = await fetchNodeTime(nodeUrl)
-    console.log("nodeTime")
-    console.log(nodeTime)
-
     const nodeServer = await fetchNodeServer(nodeUrl)
-    console.log("nodeServer")
-    console.log(nodeServer)
     // Node routes end
 })()
