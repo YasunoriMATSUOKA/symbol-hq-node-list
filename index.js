@@ -7,304 +7,158 @@ const baseNodeUrlList = [
     "https://symbol-testnet-api-2.next-web-technology.com:3001"
 ]
 
-const defaultMinPageSize = 10
-const defaultMaxPageSize = 100
+const timeOut = 1000
 
 // Utility
-const portNo = (peerOrBrokerOrApi, httpOrHttps) => {
-    let portNo
-    if (peerOrBrokerOrApi === "peer") {
-        if (httpOrHttps === "http") {
-            portNo = 7900
-        } else if (httpOrHttps === "https") {
-            portNo = 7901
-        } else {
-            console.error('Arg must be string "http" or "https".')
-        }
-    } else if (peerOrBrokerOrApi === "broker") {
-        if (httpOrHttps === "http") {
-            portNo = 7902
-        } else if (httpOrHttps === "https") {
-            portNo = 7903
-        } else {
-            console.error('Arg must be string "http" or "https".')
-        }
-    } else if (peerOrBrokerOrApi === "api") {
-        if (httpOrHttps === "http") {
-            portNo = 3000
-        } else if (httpOrHttps === "https") {
-            portNo = 3001
-        } else {
-            console.error('Arg must be string "http" or "https".')
-        }
-    } else {
-        console.error('Error! Arg must be string of "peer" or "broker" or "api".')
+const urlGenerator = (baseUrl, method) => {
+    try {
+        const urlObject = method ? new URL(method, baseUrl) : new URL(baseUrl)
+        const url = urlObject.toString()
+        return url
+    } catch (error) {
+        console.error("Error! Invalid URL. Check base URL or method in urlGenerator.")
+        return undefined
     }
 }
 
-const isPlusInteger = (number) => {
-    return Number.isInteger(number) && Math.sign(number) === 1
-}
-
-const isValidPageSize = (number) => {
-    return number >= defaultMinPageSize && number <= defaultMaxPageSize
-}
-
-// Block routes start
-const fetchBLockHeight = async (nodeUrl, height) => {
-    if (isPlusInteger(height)) {
-        const method = "/block/" + height
-        const urlObject = new URL(method, nodeUrl)
-        const url = urlObject.toString()
-        console.log("url", url)
-        return await axios(url).then((response) => {
-            const status = response.status
-            console.log("status", status)
-            const data = response.data
-            console.log("body", data)
-            return data
-        }).catch((error) => {
-            console.error(error)
+const simpleAxiosRequest = async (url) => {
+    console.log("url", url)
+    if (url) {
+        return await axios(url, { timeout : timeOut })
+        .then((res) => {
+            console.log("data", res.data)
+            return res.data
+        })
+        .catch((error) => {
+            // console.error(error)
+            console.error("Error! axios failed. host setting of the node is not accurate or protocol (http or https) is not matched.")
+            return undefined
         })
     } else {
-        console.error("Error! height must be plus integer.")
+        console.error("Error! simpleAxiosRequest failed. Because URL is invalid.")
+        return undefined
     }
 }
-// Block routes end
 
-// Chain routes start
-const fetchChainHeight = async (nodeUrl) => {
-    const urlObject = new URL("/chain/height", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+const domainToHttpApiNodeUrl = (domain) => {
+    return "http://" + domain + ":3000"
 }
 
-const fetchChainScore = async (nodeUrl) => {
-    const urlObject = new URL("/chain/score", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
-}
-// Chain route end
-
-// Network routes start
-const fetchNetwork = async (nodeUrl) => {
-    const urlObject = new URL("/network", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+const domainToHttpsApiNodeUrl = (domain) => {
+    return "https://" + domain + ":3001"
 }
 
-const fetchNetworkFees = async (nodeUrl) => {
-    const urlObject = new URL("/network/fees", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
-}
-
-// Note: To use this method, maybe, Rest API server must be set optionally.
-// Todo: Try after Rest API server optional configuration.
-/*
-const fetchNetworkProperties = async (nodeUrl) => {
-    const urlObject = new URL("/network/properties", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
-}
-*/
-// Network routes end
-
-// Node routes start
+// Infrastructure
 const fetchNodeHealth = async (nodeUrl) => {
-    const urlObject = new URL("/node/health", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/health")
+    return await simpleAxiosRequest(url)
 }
 
 const fetchNodeInfo = async (nodeUrl) => {
-    const urlObject = new URL("/node/info", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/info")
+    return await simpleAxiosRequest(url)
 }
 
 const fetchNodePeers = async (nodeUrl) => {
-    const urlObject = new URL("/node/peers", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/peers")
+    return await simpleAxiosRequest(url)
 }
 
 const fetchNodeStorage = async (nodeUrl) => {
-    const urlObject = new URL("/node/storage", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/storage")
+    return await simpleAxiosRequest(url)
 }
 
 const fetchNodeTime = async (nodeUrl) => {
-    const urlObject = new URL("/node/time", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/time")
+    return await simpleAxiosRequest(url)
 }
 
 const fetchNodeServer = async (nodeUrl) => {
-    const urlObject = new URL("/node/server", nodeUrl)
-    const url = urlObject.toString()
-    console.log("url", url)
-    return await axios(url).then((response) => {
-        const status = response.status
-        console.log("status", status)
-        const data = response.data
-        console.log("body", data)
-        return data
-    }).catch((error) => {
-        console.error(error)
-    })
+    const url = urlGenerator(nodeUrl, "/node/server")
+    return await simpleAxiosRequest(url)
 }
+
+// App Logic
+const hasApiNode = (nodeInfo) => {
+    return nodeInfo.roles === 2 || nodeInfo.roles === 3
+}
+
+const filterNodeDomains = (nodePeers) => {
+    const nodeDomains = nodePeers.filter((element1) => {
+        return hasApiNode(element1)
+    }).map((element2) => {
+        return element2.host
+    })
+    return nodeDomains
+}
+
+const asyncTestIsHttpApi = async (nodeDomain) => {
+    try {
+        const nodeUrl = domainToHttpApiNodeUrl(nodeDomain)
+        const nodeHealth = await fetchNodeHealth(nodeUrl)
+            .catch((error) => {
+                console.error(error)
+                return undefined
+            })
+        if (nodeHealth) {
+            const isHttpApi = nodeHealth.status.apiNode === "up" ? true : false
+            return isHttpApi
+        } else {
+            console.error("Error! nodeHealth can't be fetched.")
+            return false
+        }
+    } catch {
+        console.error("Error! asyncTestIsHttpApi is failed.")
+        return false
+    }
+}
+
+const asyncTestIsHttpsApi = async (nodeDomain) => {
+    try {
+        const nodeUrl = domainToHttpsApiNodeUrl(nodeDomain)
+        const nodeHealth = await fetchNodeHealth(nodeUrl)
+            .catch((error) => {
+                console.error(error)
+                return undefined
+            })
+        if (nodeHealth) {
+            const isHttpsApi = nodeHealth.status.apiNode === "up" ? true : false
+            return isHttpsApi
+        } else {
+            console.error("Error! nodeHealth can't be fetched.")
+            return false
+        }
+    } catch {
+        console.error("Error! asyncTestIsHttpsApi is failed.")
+        return false
+    }
+}
+
+// Todo: recursive node explorer procedure is needed.
 
 (async () => {
     const nodeUrl = baseNodeUrlList[0]
-    
-    // Block routes start
-    const block1 = await fetchBLockHeight(nodeUrl, 1)
-    console.log("block1")
-    console.log(block1)
-    // Block routes end
-    
-    // Chain routes start
-    const chainHeight = await fetchChainHeight(nodeUrl)
-    console.log("chainHeight")
-    console.log(chainHeight)
+    const nodePeers = await fetchNodePeers(nodeUrl)
+    const nodeDomains = filterNodeDomains(nodePeers)
+    console.log("nodeDomains", nodeDomains)
+    const httpApiNodeDomains = []
+    for (const domain of nodeDomains) {
+        const isHttpApi = await asyncTestIsHttpApi(domain)
+        if (isHttpApi) {
+            httpApiNodeDomains.push(domain)
+        }
+        console.log("http", domain, isHttpApi)
+    }
+    console.log("httpApiNodeDomains", httpApiNodeDomains)
 
-    const chainScore = await fetchChainScore(nodeUrl)
-    console.log("chainScore")
-    console.log(chainScore)
-    // Chain routes end
-
-    // Network routes start
-    const network = await fetchNetwork(nodeUrl)
-    console.log("network")
-    console.log(network)
-
-    const networkFees = await fetchNetworkFees(nodeUrl)
-    console.log("networkFees")
-    console.log(networkFees)
-
-    // Note: Probably this method can only be used in optional configured node.
-    /*
-    const networkProperties = await fetchNetworkProperties(nodeUrl)
-    console.log("networkProperties")
-    console.log(networkProperties)
-    */
-    // Network routes end
-
-    // Node routes start
-    const nodeInfo = await fetchNodeInfo(nodeUrl)
-    console.log("nodeInfo")
-    console.log(nodeInfo)
-    
-    const peerNodes = await fetchNodePeers(nodeUrl)
-    console.log("peerNodes")
-    console.log(peerNodes)
-    
-    const nodeHealth = await fetchNodeHealth(nodeUrl)
-    console.log("nodeHealth")
-    console.log(nodeHealth)
-    
-    const nodeStorage = await fetchNodeStorage(nodeUrl)
-    console.log("nodeStorage")
-    console.log(nodeStorage)
-
-    const nodeTime = await fetchNodeTime(nodeUrl)
-    console.log("nodeTime")
-    console.log(nodeTime)
-
-    const nodeServer = await fetchNodeServer(nodeUrl)
-    console.log("nodeServer")
-    console.log(nodeServer)
-    // Node routes end
+    const httpsApiNodeDomains = []
+    for (const domain of nodeDomains) {
+        const isHttpsApi = await asyncTestIsHttpsApi(domain)
+        if (isHttpsApi) {
+            httpsApiNodeDomains.push(domain)
+        }
+        console.log("https", domain, isHttpsApi)
+    }
+    console.log("httpsApiNodeDomains", httpsApiNodeDomains)
 })()
