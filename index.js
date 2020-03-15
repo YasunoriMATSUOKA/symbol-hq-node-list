@@ -26,7 +26,7 @@ const simpleAxiosRequest = async (url) => {
     if (url) {
         return await axios(url, { timeout : timeOut })
         .then((res) => {
-            console.log("data", res.data)
+            // console.log("data", res.data)
             return res.data
         })
         .catch((error) => {
@@ -135,13 +135,101 @@ const asyncTestIsHttpsApi = async (nodeDomain) => {
     }
 }
 
-// Todo: recursive node explorer procedure is needed.
+const asyncRecursiveExplorerNodePeers = async (nodePeers) => {
+    let recursiveNodePeers = nodePeers
+    for (const nodePeer of nodePeers) {
+        const nodePeersOnPeerNode = await fetchNodePeers(urlGenerator(domainToHttpApiNodeUrl(nodePeer.host)))
+        if (nodePeersOnPeerNode) {
+            console.log("nodePeersOnPeerNode", nodePeersOnPeerNode.length)
+            var recursiveNodePeersDuplicate = recursiveNodePeers.concat(nodePeersOnPeerNode)
+            console.log("recursiveNodePeersDuplicate", recursiveNodePeersDuplicate.length)
+            var recursiveNodepeersMap = new Map(recursiveNodePeersDuplicate.map((element) => [element.host, element]))
+            recursiveNodePeers = Array.from(recursiveNodepeersMap.values())
+            console.log("recursiveNodePeers", recursiveNodePeers.length)
+        }
+    }
+    console.log("recursiveNodePeers", recursiveNodePeers.length, recursiveNodePeers)
+    return recursiveNodePeers
+}
+
+const repeatAsyncRecursiveExplorerNodePeers = async (nodeUrl) => {
+    let nodePeers = await fetchNodePeers(nodeUrl)
+    for (let i = 0; i < 2; i++){
+        nodePeers = await asyncRecursiveExplorerNodePeers(nodePeers)
+    }
+    console.log("repeatAsyncRecursiveNodePeers", nodePeers.length, nodePeers)
+    return nodePeers
+}
+
+class Symbol {
+    constructor (domain) {
+        this.node = {
+            custom: {
+                domain: domain,
+                api: {
+                    http: {
+                        url: undefined,
+                        isValid: undefined,
+                    },
+                    https: {
+                        url: undefined,
+                        isValid: undefined,
+                    },
+                },
+            },
+            health: undefined,
+            info: undefined,
+            peers: undefined,
+            server: undefined,
+            storage: undefined,
+            time: undefined,
+        }
+    }
+    async setNodeInfo () {
+        this.custom.api.http.url = urlGenerator(domainToHttpApiNodeUrl(this.custom.domain))
+        if (this.custom.api.http.url) {
+            this.node.info = await fetchNodeInfo(this.custom.api.http.url)
+                .catch((error) => {
+                    console.error(error)
+                    this.custom.api.http.isValid = false
+                    return undefined
+                })
+        } else {
+            this.custom.api.http.isValid = false
+        }
+        
+        this.custom.api.https.url = urlGenerator(domainToHttpsApiNodeUrl(this.custom.domain))
+        
+    }
+}
 
 (async () => {
     const nodeUrl = baseNodeUrlList[0]
+    const node = {
+        nodeInfo: undefined,
+        nodeHealth: undefined,
+        nodeServer: undefined,
+        nodeStorage: undefined,
+        nodePeers: undefined,
+        nodeTime: undefined,
+        custom: {
+            valid: {
+                httpApi: undefined,
+                httpsApi: undefined
+            }
+        }
+    }
+    const nodePeers = await repeatAsyncRecursiveExplorerNodePeers(nodeUrl)
+
+    /*
     const nodePeers = await fetchNodePeers(nodeUrl)
     const nodeDomains = filterNodeDomains(nodePeers)
     console.log("nodeDomains", nodeDomains)
+    const recursiveNodePeers1 = await asyncRecursiveExplorerNodePeers(nodePeers)
+    const recursiveNodePeers2 = await asyncRecursiveExplorerNodePeers(recursiveNodePeers1)
+    const recursiveNodePeers3 = await asyncRecursiveExplorerNodePeers(recursiveNodePeers2)
+    */
+    /*
     const httpApiNodeDomains = []
     for (const domain of nodeDomains) {
         const isHttpApi = await asyncTestIsHttpApi(domain)
@@ -161,4 +249,5 @@ const asyncTestIsHttpsApi = async (nodeDomain) => {
         console.log("https", domain, isHttpsApi)
     }
     console.log("httpsApiNodeDomains", httpsApiNodeDomains)
+    */
 })()
